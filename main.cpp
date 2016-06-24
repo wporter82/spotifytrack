@@ -45,7 +45,7 @@ void printSongTitle(int length = 255)
 void printUsage(char* argv[])
 {
 	cerr << "Usage: " << argv[0] << " [OPTION]...\n"
-		<< "Print the currently playing tack on Spotify\n"
+		<< "Print the currently playing track on Spotify\n"
 		<< "\n"
 		<< "Options:\n"
 		<< "\t-l, --length n\t\tLimit the output to n characters\n"
