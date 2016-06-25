@@ -1,6 +1,6 @@
 CC=g++
 LDFLAGS=
-CFLAGS=
+CFLAGS=-Wno-write-strings
 
 all: spotifytrack clean
 

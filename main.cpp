@@ -4,13 +4,13 @@
 
 using namespace std;
 
-static string VERSION = "1.0.0";
+static char* VERSION = "1.1.0";
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam);
 char songTitle[255];
 
-void printSongTitle(int length = 255)
+void printSongTitle(unsigned int length = 255)
 {
-	LPARAM lParam;
+	LPARAM lParam = 0;
 	EnumWindows(EnumWindowsProc, lParam);
 
 	// Check if Spotify is paused
@@ -27,7 +27,7 @@ void printSongTitle(int length = 255)
 	{
 		int titleLen = strlen(songTitle);
 		int truncateLen = titleLen - length;
-		char copy[length+1];
+		char* copy = new char[length+1];
 
 		strncpy(copy, songTitle, titleLen - truncateLen);
 		// Add null terminator to end of the string
