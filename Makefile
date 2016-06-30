@@ -1,9 +1,9 @@
 CC=g++
 LDFLAGS=
 ifeq ($(BUILD),debug)
-CFLAGS +=-Wno-write-strings -O0 -g
+CFLAGS +=-O0 -g
 else
-CFLAGS=-Wno-write-strings -O3 -s -DNDEBUG
+CFLAGS=-O3 -s -DNDEBUG
 endif
 
 all: spotifytrack clean

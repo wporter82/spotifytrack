@@ -1,50 +1,42 @@
 #include <iostream>
+#include <sstream>
 #include <string.h>
+#include <getopt.h>
 #include <windows.h>
 
 using namespace std;
 
-static char* VERSION = "1.1.0";
+static string VERSION = "1.1.1";
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam);
 char songTitle[255];
 
-void printSongTitle(unsigned int length = 255)
+void printSongTitle(unsigned int length)
 {
 	LPARAM lParam = 0;
 	EnumWindows(EnumWindowsProc, lParam);
 
+	string song = songTitle;
 	// Check if Spotify is paused
-	if(strcmp(songTitle, "Spotify") == 0)
+	if(song == "Spotify")
 	{
-		char pausedMessage[] = "Paused";
-		int pauseLen = strlen(pausedMessage);
-		strncpy(songTitle, pausedMessage, pauseLen);
-		songTitle[pauseLen] = 0;
+		song = "Paused";
 	}
 
-	// Truncate the title
-	if(strlen(songTitle) > length)
-	{
-		int titleLen = strlen(songTitle);
-		int truncateLen = titleLen - length;
-		char* copy = new char[length+1];
-
-		strncpy(copy, songTitle, titleLen - truncateLen);
-		// Add null terminator to end of the string
-		copy[length] = 0;
-
-		cout << copy << endl;
-	}
-	else
-	{
-		cout << songTitle << endl;
-	}
+	// Truncate if needed
+	cout << song.substr(0,length) << endl;
 	return;
 }
 
-void printUsage(char* argv[])
+bool is_number(const std::string& s)
 {
-	cerr << "Usage: " << argv[0] << " [OPTION]...\n"
+	string::const_iterator it = s.begin();
+	while (it != s.end() && isdigit(*it)) ++it;
+	return !s.empty() && it == s.end();
+}
+
+void printUsage(string exe_name)
+{
+	cerr << "Usage: " << exe_name << " [OPTION]...\n"
 		<< "Print the currently playing track on Spotify\n"
 		<< "\n"
 		<< "Options:\n"
@@ -55,49 +47,81 @@ void printUsage(char* argv[])
 
 int main(int argc, char* argv[])
 {
-	if(argc < 2)
+	int c;
+	unsigned int length = 255;
+
+	while (1)
 	{
-		printSongTitle();
+		static struct option long_options[] =
+		{
+			{"length",		required_argument,	0, 'l'},
+			{"version",		no_argument,		0, 'v'},
+			{"help",		no_argument,		0, 'h'},
+			{0,0,0,0}
+		};
+		int option_index = 0;
+
+		c = getopt_long (argc, argv, "l:vh", long_options, &option_index);
+
+		if (c == -1)
+			break;
+
+		switch (c)
+		{
+			case 0:
+				if (long_options[option_index].flag != 0)
+					break;
+				cout << "option " << long_options[option_index].name;
+				if (optarg)
+					cout << " with arg " << optarg;
+				cout << endl;
+				return 1;
+				break;
+
+			case 'l':
+				{
+					if (is_number(optarg))
+					{
+						stringstream s(optarg);
+						s >> length;
+					}
+					else
+					{
+						cerr << optarg << " is not a valid number" << endl;
+						return 1;
+					}
+					break;
+				}
+
+			case 'v':
+				cout << "Spotify Now Playing - Version: " << VERSION << endl;
+				return 0;
+				break;
+
+			case 'h':
+				printUsage(argv[0]);
+				return 0;
+				break;
+
+			case '?':
+				return 1;
+				break;
+
+			default:
+				abort();
+		}
 	}
-	else if(argc == 2)
+
+	if (optind < argc)
 	{
-		if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
-		{
-			printUsage(argv);
-		}
-		else if(strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)
-		{
-			cout << "Spotify Now Playing - Version: " << VERSION << endl;
-		}
-		else
-		{
-			printUsage(argv);
-		}
+		cerr << "Unknown argument(s): ";
+		while (optind < argc)
+			cerr << argv[optind++] << " ";
+		cerr << endl;
+		return 1;
 	}
-	else if(argc == 3)
-	{
-		if(strcmp(argv[1], "-l") == 0 || strcmp(argv[1], "--length") == 0)
-		{
-			int length = atoi(argv[2]);
-			if(length < 1 || length > 255)
-			{
-				cerr << "Error: " << argv[2] << " is invalid. Number must be positive and less than 255."
-					<< endl;
-			}
-			else
-			{
-				printSongTitle(length);
-			}
-		}
-		else
-		{
-			printUsage(argv);
-		}
-	}
-	else
-	{
-		printUsage(argv);
-	}
+
+	printSongTitle(length);
 
 	return 0;
 }

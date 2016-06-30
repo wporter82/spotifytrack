@@ -20,6 +20,8 @@ Required packages:
 Just clone the repo and run make to build it.
 
 ### Visual Studio C++
+Requires:
+	[getopt.h](https://github.com/skandhurkat/Getopt-for-Visual-Studio/blob/master/getopt.h)
 
 VS project files are included in the repo and can be used to build.
 
