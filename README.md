@@ -25,6 +25,13 @@ Requires:
 
 VS project files are included in the repo and can be used to build.
 
+To use the Visual studio compiled version in some Cygwin apps, you may need to strip off '\r' from the
+output due to the way Windows outputs newlines (\r\n instead of just \n).
+
+See my tmux usage for an example:
+	set -g status-right "#[fg=brightwhite,bg=black] ♫ #[fg=brightgreen]#(spotifytrack -l 80 | tr -d '\r') #[fg=brightblue,bg=colour241,bold] %m/%d #[fg=colour233,bg=colour245,bold] %I:%M:%S %P "
+
+![SpotifyTrack in tmux](http://i.imgur.com/gIcSzhz.png)
 
 ## Usage
 
@@ -33,7 +40,7 @@ usage for the build you are running.
 
 	Usage: spotifytrack.exe [OPTION]...
 	Print the currently playing track on Spotify
-	
+
 	Options:
 			-l, --length n		Limit the output to n characters
 			-h, --help			Show this usage message
