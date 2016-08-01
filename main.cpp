@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <getopt.h>
+#include "getopt.h"
 #include <windows.h>
 
 using namespace std;
@@ -12,8 +12,7 @@ char songTitle[255];
 
 void printSongTitle(unsigned int length)
 {
-	LPARAM lParam = 0;
-	EnumWindows(EnumWindowsProc, lParam);
+	EnumWindows(EnumWindowsProc, 0);
 
 	string song = songTitle;
 	// Check if Spotify is paused
@@ -27,7 +26,7 @@ void printSongTitle(unsigned int length)
 	return;
 }
 
-bool is_number(const std::string& s)
+bool is_number(const string& s)
 {
 	string::const_iterator it = s.begin();
 	while (it != s.end() && isdigit(*it)) ++it;
@@ -36,13 +35,13 @@ bool is_number(const std::string& s)
 
 void printUsage(string exe_name)
 {
-	cerr << "Usage: " << exe_name << " [OPTION]...\n"
-		<< "Print the currently playing track on Spotify\n"
-		<< "\n"
-		<< "Options:\n"
-		<< "\t-l, --length n\t\tLimit the output to n characters\n"
-		<< "\t-h, --help\t\tShow this usage message\n"
-		<< "\t-v, --version\t\tShow the version number\n";
+	cerr	<< "Usage: " << exe_name << " [OPTION]...\n"
+			<< "Print the currently playing track on Spotify\n"
+			<< "\n"
+			<< "Options:\n"
+			<< "\t-l, --length n\t\tLimit the output to n characters\n"
+			<< "\t-h, --help\t\tShow this usage message\n"
+			<< "\t-v, --version\t\tShow the version number\n";
 }
 
 int main(int argc, char* argv[])
@@ -82,6 +81,7 @@ int main(int argc, char* argv[])
 				{
 					if (is_number(optarg))
 					{
+						// Convert the argument to an int
 						stringstream s(optarg);
 						s >> length;
 					}
@@ -130,8 +130,9 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
 	char className[80];
 	GetClassName(hwnd,className,sizeof(className));
+	string sClassName = className;
 
-	if(strcmp(className, "SpotifyMainWindow") == 0)
+	if(sClassName == "SpotifyMainWindow")
 	{
 		// Found the Spotify window, now get the window title
 		GetWindowText(hwnd,songTitle,sizeof(songTitle));
