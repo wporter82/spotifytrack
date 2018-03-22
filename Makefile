@@ -1,9 +1,9 @@
 CC=g++
-LDFLAGS=
+LDFLAGS=-lpsapi
 ifeq ($(BUILD),debug)
 CFLAGS +=-O0 -g
 else
-CFLAGS=-O3 -s -DNDEBUG
+CFLAGS=-O0 -s -DNDEBUG
 endif
 
 all: spotifytrack clean

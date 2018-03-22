@@ -1,20 +1,29 @@
 #include <iostream>
 #include <sstream>
-#include <string.h>
 #include "getopt.h"
 #include <windows.h>
+#include <psapi.h>
 
 using namespace std;
 
 static string VERSION = "1.1.1";
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam);
-char songTitle[255];
+char *songTitle;
 
 void printSongTitle(unsigned int length)
 {
-	EnumWindows(EnumWindowsProc, 0);
+	string song;
+	song = "";
 
-	string song = songTitle;
+	if(!EnumWindows(EnumWindowsProc, 0))
+	{
+		song = songTitle;
+	}
+	else
+	{
+		song = "Not running";
+	}
+
 	// Check if Spotify is paused
 	if(song == "Spotify")
 	{
@@ -128,16 +137,41 @@ int main(int argc, char* argv[])
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-	char className[80];
+	char className[255];
 	GetClassName(hwnd,className,sizeof(className));
 	string sClassName = className;
 
-	if(sClassName == "SpotifyMainWindow")
+	// Look for the class name that Spotify is registered as
+	if(sClassName == "Chrome_WidgetWin_0" && IsWindowVisible(hwnd))
 	{
-		// Found the Spotify window, now get the window title
-		GetWindowText(hwnd,songTitle,sizeof(songTitle));
-		// Return false to stop enumerating
-		return false;
+		// Get the process ID so we can find the exe path
+		DWORD procID;
+		DWORD threadID;
+		threadID = GetWindowThreadProcessId(hwnd, &procID);
+
+		HANDLE threadHandle;
+		threadHandle = OpenProcess(
+					PROCESS_QUERY_INFORMATION |
+					PROCESS_QUERY_LIMITED_INFORMATION,
+					false, procID);
+
+		LPTSTR fileName;
+		GetProcessImageFileName(threadHandle, fileName, 255);
+
+		if(fileName != NULL && strstr(fileName, "Spotify.exe"))
+		{
+			LPTSTR windowTitle;
+			GetWindowText(hwnd, windowTitle, 255);
+
+			// Find the one that isn't blank
+			if(windowTitle != NULL && windowTitle[0] != 0)
+			{
+				songTitle = windowTitle;
+				// Return false to stop enumerating
+				return false;
+			}
+		}
+
 	}
 	// Return true to keep looking for the Spotify window
 	return true;
