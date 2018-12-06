@@ -155,13 +155,13 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 					PROCESS_QUERY_LIMITED_INFORMATION,
 					false, procID);
 
-		LPTSTR fileName;
-		GetProcessImageFileName(threadHandle, fileName, 255);
+		TCHAR fileName[MAX_PATH];
+		GetProcessImageFileName(threadHandle, fileName, MAX_PATH);
 
 		if(fileName != NULL && strstr(fileName, "Spotify.exe"))
 		{
-			LPTSTR windowTitle;
-			GetWindowText(hwnd, windowTitle, 255);
+			TCHAR windowTitle[MAX_PATH];
+			GetWindowText(hwnd, windowTitle, MAX_PATH);
 
 			// Find the one that isn't blank
 			if(windowTitle != NULL && windowTitle[0] != 0)
