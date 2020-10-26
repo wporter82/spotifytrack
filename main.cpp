@@ -25,7 +25,7 @@ void printSongTitle(unsigned int length)
 	}
 
 	// Check if Spotify is paused
-	if(song == "Spotify")
+	if(song == "Spotify" || song == "Spotify Premium")
 	{
 		song = "Paused";
 	}
