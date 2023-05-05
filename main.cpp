@@ -1,20 +1,48 @@
 #include <iostream>
 #include <sstream>
-#include "getopt.h"
+#include <getopt.h>
+#include <algorithm>
+#ifndef _WSL
 #include <windows.h>
 #include <psapi.h>
+#else
+#include <memory>
+#include <string>
+#include <array>
+#endif
 
-using namespace std;
+#ifdef _WSL
+std::string exec(const char* cmd);
+#endif
 
-static string VERSION = "1.1.1";
+// Trim whitespace from start of string (in place)
+static inline void ltrim(std::string &s) {
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+		return !std::isspace(ch);
+	}));
+}
+
+// Trim whitespace from end of string (in place)
+static inline void rtrim(std::string &s) {
+	s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+		return !std::isspace(ch);
+	}).base(), s.end());
+}
+
+static std::string VERSION = "1.2";
+#ifndef _WSL
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam);
+#else
+std::string getSongTitle();
+#endif
 char *songTitle;
 
 void printSongTitle(unsigned int length)
 {
-	string song;
+	std::string song;
 	song = "";
 
+#ifndef _WSL
 	if(!EnumWindows(EnumWindowsProc, 0))
 	{
 		song = songTitle;
@@ -23,7 +51,11 @@ void printSongTitle(unsigned int length)
 	{
 		song = "Not running";
 	}
-
+#else
+	song = getSongTitle();
+#endif
+	ltrim(song);
+	rtrim(song);
 	// Check if Spotify is paused
 	if(song == "Spotify" || song == "Spotify Premium")
 	{
@@ -31,20 +63,20 @@ void printSongTitle(unsigned int length)
 	}
 
 	// Truncate if needed
-	cout << song.substr(0,length) << endl;
+	std::cout << song.substr(0,length) << std::endl;
 	return;
 }
 
-bool is_number(const string& s)
+bool is_number(const std::string& s)
 {
-	string::const_iterator it = s.begin();
+	std::string::const_iterator it = s.begin();
 	while (it != s.end() && isdigit(*it)) ++it;
 	return !s.empty() && it == s.end();
 }
 
-void printUsage(string exe_name)
+void printUsage(std::string exe_name)
 {
-	cerr	<< "Usage: " << exe_name << " [OPTION]...\n"
+	std::cerr	<< "Usage: " << exe_name << " [OPTION]...\n"
 			<< "Print the currently playing track on Spotify\n"
 			<< "\n"
 			<< "Options:\n"
@@ -79,10 +111,10 @@ int main(int argc, char* argv[])
 			case 0:
 				if (long_options[option_index].flag != 0)
 					break;
-				cout << "option " << long_options[option_index].name;
+				std::cout << "option " << long_options[option_index].name;
 				if (optarg)
-					cout << " with arg " << optarg;
-				cout << endl;
+					std::cout << " with arg " << optarg;
+				std::cout << std::endl;
 				return 1;
 				break;
 
@@ -91,19 +123,19 @@ int main(int argc, char* argv[])
 					if (is_number(optarg))
 					{
 						// Convert the argument to an int
-						stringstream s(optarg);
+						std::stringstream s(optarg);
 						s >> length;
 					}
 					else
 					{
-						cerr << optarg << " is not a valid number" << endl;
+						std::cerr << optarg << " is not a valid number" << std::endl;
 						return 1;
 					}
 					break;
 				}
 
 			case 'v':
-				cout << "Spotify Now Playing - Version: " << VERSION << endl;
+				std::cout << "Spotify Now Playing - Version: " << VERSION << std::endl;
 				return 0;
 				break;
 
@@ -123,10 +155,10 @@ int main(int argc, char* argv[])
 
 	if (optind < argc)
 	{
-		cerr << "Unknown argument(s): ";
+		std::cerr << "Unknown argument(s): ";
 		while (optind < argc)
-			cerr << argv[optind++] << " ";
-		cerr << endl;
+			std::cerr << argv[optind++] << " ";
+		std::cerr << std::endl;
 		return 1;
 	}
 
@@ -135,11 +167,12 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+#ifndef _WSL
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
 	char className[255];
 	GetClassName(hwnd,className,sizeof(className));
-	string sClassName = className;
+	std::string sClassName = className;
 
 	// Look for the class name that Spotify is registered as
 	if(sClassName == "Chrome_WidgetWin_0" && IsWindowVisible(hwnd))
@@ -176,3 +209,23 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 	// Return true to keep looking for the Spotify window
 	return true;
 }
+#else
+std::string getSongTitle() {
+	std::string result;
+	result = exec("$(wslpath \"C:\\Windows\\System32\")/tasklist.exe /V /FO LIST /FI \"IMAGENAME eq Spotify.exe\" /FI \"STATUS eq RUNNING\" | grep -i \"Window Title\" | grep -iv \"N/A\" | sed 's/Window Title: //'");
+	return result;
+}
+
+std::string exec(const char* cmd) {
+	std::array<char, 128> buffer;
+	std::string result;
+	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+	if (!pipe) {
+		throw std::runtime_error("popen() failed!");
+	}
+	while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+		result += buffer.data();
+	}
+	return result;
+}
+#endif
